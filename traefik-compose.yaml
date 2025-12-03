@@ -1,0 +1,31 @@
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - traefik-public
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
+      - CROWDSEC_KEY=${CROWDSEC_KEY}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./configs/traefik.yaml:/traefik.yaml:ro
+      - ./configs/config.yaml:/config.yaml:ro
+      - ./data/acme.json:/acme.json
+      - traefik-logs:/var/log/traefik
+    labels:
+      - "traefik.enable=true"
+networks:
+  traefik-public:
+    name: traefik-public
+    external: false
+
+volumes:
+  traefik-logs:
