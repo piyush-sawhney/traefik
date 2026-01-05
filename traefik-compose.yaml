@@ -3,6 +3,9 @@ services:
     image: traefik:latest
     container_name: traefik
     restart: unless-stopped
+    user: "65534:65534"
+    tmpfs:
+      - /tmp
     security_opt:
       - no-new-privileges:true
     networks:
@@ -18,13 +21,8 @@ services:
       - ./configs/traefik.yaml:/traefik.yaml:ro
       - ./configs/config.yaml:/config.yaml:ro
       - ./data/acme.json:/acme.json
-      - traefik-logs:/var/log/traefik
-    labels:
-      - "traefik.enable=true"
+      - ./logs:/var/log/traefik
 networks:
   traefik-public:
     name: traefik-public
     external: false
-
-volumes:
-  traefik-logs:
