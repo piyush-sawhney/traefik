@@ -3,11 +3,27 @@ services:
     image: traefik:latest
     container_name: traefik
     restart: unless-stopped
-    user: "65534:65534"
     tmpfs:
       - /tmp
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL                              
+    cap_add:
+      - NET_BIND_SERVICE                    
+    deploy:
+      resources:
+        limits:
+          memory: 256M                       
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s                      
     networks:
       - traefik-public
     ports:
@@ -15,13 +31,15 @@ services:
       - "443:443"
     environment:
       - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
+      - TZ=Asia/Kolkata
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./configs/traefik.yaml:/traefik.yaml:ro
       - ./configs/config.yaml:/config.yaml:ro
-      - ./data/acme.json:/acme.json
+      - ./data/acme-cf.json:/acme-cf.json
       - ./logs:/var/log/traefik
+
 networks:
   traefik-public:
     name: traefik-public
