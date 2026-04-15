@@ -1,4 +1,5 @@
 services:
+  
   traefik:
     image: traefik:latest
     container_name: traefik
@@ -14,14 +15,9 @@ services:
           cpus: '0.5'
         reservations:
           memory: 64M
-    healthcheck:
-      test: ["CMD", "traefik", "healthcheck", "--ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
     networks:
       - traefik-public
+      - docker-proxynet
     ports:
       - "80:80"
       - "443:443"
@@ -45,6 +41,22 @@ services:
       - "traefik.http.routers.dashboard.tls.certresolver=${TRAEFIK_CERT_RESOLVER:?No TRAEFIK_CERT_RESOLVER set}"
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.middlewares=dashboard-auth"
+
+  socket-proxy:
+    image: lscr.io/linuxserver/socket-proxy:latest
+    container_name: socket-proxy
+    environment:
+      - CONTAINERS=1
+      - EVENTS=1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - docker-proxynet
+    restart: always
+    read_only: true
+    tmpfs:
+      - /run
+      
 
 volumes:
   traefik-logs:
