@@ -7,10 +7,6 @@ services:
       - /tmp
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
     deploy:
       resources:
         limits:
@@ -32,6 +28,7 @@ services:
     environment:
       - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
       - TZ=Asia/Kolkata
+      - TRAEFIK_DASHBOARD_CREDENTIALS=${TRAEFIK_DASHBOARD_CREDENTIALS}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -39,11 +36,19 @@ services:
       - ./configs/config.yaml:/config.yaml:ro
       - ./data/acme-cf.json:/acme-cf.json
       - traefik-logs:/var/log/traefik 
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_DASHBOARD_HOST:?No TRAEFIK_DASHBOARD_HOST set}`)"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.middlewares.dashboard-auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS:?No TRAEFIK_DASHBOARD_CREDENTIALS set}"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.dashboard.tls.certresolver=${TRAEFIK_CERT_RESOLVER:?No TRAEFIK_CERT_RESOLVER set}"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-auth"
 
 volumes:
   traefik-logs:
     name: traefik-logs 
-    driver: local
 
 networks:
   traefik-public:
